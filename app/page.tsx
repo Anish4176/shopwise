@@ -1,50 +1,25 @@
 import { Suspense } from "react";
 import Image from "next/image";
 import { prisma } from "@/lib/prisma";
-import  formatPrice  from "@/lib/format";
+import  {formatPrice}  from "@/lib/format";
+import { connection } from "next/server";
+import Link from "next/link";
+import { ProductList } from "@/components/products/product-list";
+import { ProductListSkeleton } from "@/components/products/product-list-skeleton";
+import { CategoryFilter } from "@/components/products/category-filter";
 
-async function ProductList() {
-  const products = await prisma.product.findMany({
-    include: { category: true },
-    orderBy: { createdAt: "desc" },
-  });
 
-  return (
-    <div className="grid grid-cols-2 gap-6 md:grid-cols-3">
-      {products.map((product) => (
-        <div key={product.id} className="rounded-lg border p-3">
-          <Image
-            src={product.images[0]}
-            alt={product.name}
-            width={600}
-            height={600}
-            className="rounded-md"
-          />
-          <p className="mt-2 text-sm text-gray-500">{product.category.name}</p>
-          <h2 className="font-semibold">{product.name}</h2>
-          <p>{formatPrice(product.price)}</p>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function ProductListSkeleton() {
-  return (
-    <div className="grid grid-cols-2 gap-6 md:grid-cols-3">
-      {Array.from({ length: 6 }).map((_, i) => (
-        <div key={i} className="h-72 animate-pulse rounded-lg bg-gray-200" />
-      ))}
-    </div>
-  );
-}
-
-export default function HomePage() {
+export default function HomePage({searchParams,}:{
+  searchParams:Promise<{category?:string}>
+}) {
   return (
     <main className="mx-auto max-w-6xl p-6">
       <h1 className="mb-6 text-3xl font-bold">Shopwise</h1>
+      <Suspense fallback={<div className="mb-6 h-6" />}>
+        <CategoryFilter searchParams={searchParams} />
+      </Suspense>
       <Suspense fallback={<ProductListSkeleton />}>
-        <ProductList />
+        <ProductList searchParams={searchParams} />
       </Suspense>
     </main>
   );
